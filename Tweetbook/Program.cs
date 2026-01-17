@@ -1,6 +1,8 @@
 ﻿namespace Tweetbook
 {
+    using Microsoft.EntityFrameworkCore;
     using Microsoft.OpenApi;
+    using Tweetbook.Data;
     using Tweetbook.Installers;
 
     public class Program
@@ -10,6 +12,14 @@
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.InstallServicesInAssembly(builder.Configuration);
+
+
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+            builder.Services.AddDbContext<DataContext>(options =>
+                options.UseSqlServer(connectionString));
+
+
 
 
 

@@ -1,74 +1,65 @@
-﻿using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Mvc;
-using Tweetbook.Services;
+﻿using Microsoft.AspNetCore.Mvc;
 using Tweetbook.Contracts.V1.Requests;
 using Tweetbook.Contracts.V1.Responses;
 using Tweetbook.Models;
-
-
-
+using Tweetbook.Services;
 
 namespace Tweetbook.Controllers.V1
 {
-    public class PostController : Controller
+    [ApiController]
+    [Route("api/v1/[controller]")]
+    public class PostController : ControllerBase
     {
-        private IPostServices _postServices;
+        private readonly IPostServices _postServices;
 
-        public PostController (IPostServices postService)
+        public PostController(IPostServices postServices)
         {
-            _postServices = postService;
-        }
-        [HttpGet(ApiRoutes.Posts.GetAll)]
-        public IActionResult GetAll()
-        {
-            return Ok(_postServices.GetPosts());
+            _postServices = postServices;
         }
 
+        // GET: api/v1/post
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            var posts = await _postServices.GetPosts();
+            return Ok(posts);
+        }
 
-        [HttpPut(ApiRoutes.Posts.Update)]
-        public IActionResult Update([FromRoute] Guid postId, [FromBody] UpdatePostRequests request)
+        // GET: api/v1/post/{postId}
+        [HttpGet("{postId}")]
+        public async Task<IActionResult> Get([FromRoute] Guid postId)
+        {
+            var post = await _postServices.GetPostById(postId);
+            if (post == null) return NotFound();
+
+            return Ok(post);
+        }
+
+        // PUT: api/v1/post/{postId}
+        [HttpPut("{postId}")]
+        public async Task<IActionResult> Update([FromRoute] Guid postId, [FromBody] UpdatePostRequests request)
         {
             var post = new Post
             {
                 Id = postId,
-                Name = request.Name
+                Name = request.Name 
             };
 
-            var Updated = _postServices.updatePost(post);
+            var updated = await _postServices.UpdatePost(post); 
+            if (!updated) return NotFound();
 
-            if (Updated)
-            {
-                return Ok(post);
-                return NotFound();
-
-            }
-
-            return Ok(_postServices.GetPosts());
-        }
-
-        [HttpDelete(ApiRoutes.Posts.Delete)]
-        public IActionResult Delete([FromRoute] Guid postId)
-        {
-            var deleted = _postServices.DeletePost(postId);
-            if (deleted)
-            {
-                return NoContent();
-            }
-            return NotFound();
-        }
-
-
-
-        [HttpGet(ApiRoutes.Posts.Get)]
-        public IActionResult Get([FromRoute] Guid postId)
-        {
-            var post = _postServices.GetPostById(postId);
-
-            if (post == null)
-
-                return NotFound();
             return Ok(post);
         }
 
+        // DELETE: api/v1/post/{postId}
+        [HttpDelete("{postId}")]
+        public async Task<IActionResult> Delete([FromRoute] Guid postId)
+        {
+            var deleted = await _postServices.DeletePost(postId); // ✅ await
+
+            if (!deleted) return NotFound();
+
+            return NoContent();
+        }
     }
 }
