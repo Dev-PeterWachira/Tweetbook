@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
+using Tweetbook.Services;
 
 namespace Tweetbook.Installers
 {
@@ -10,6 +11,8 @@ namespace Tweetbook.Installers
         public void InstallServices(IServiceCollection services, IConfiguration configuration)
         {
             services.AddControllers();
+            services.AddScoped<IIdentityService, IdentityService>();
+
 
             services.AddSwaggerGen(c =>
             {
@@ -18,6 +21,7 @@ namespace Tweetbook.Installers
                     Title = "Tweetbook API",
                     Version = "v1"
                 });
+
 
                 var securityScheme = new OpenApiSecurityScheme
                 {

@@ -1,9 +1,13 @@
 ﻿namespace Tweetbook
 {
+    using Microsoft.AspNetCore.Identity;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.OpenApi;
     using Tweetbook.Data;
     using Tweetbook.Installers;
+    using Tweetbook.Options;
+    using Tweetbook.Services;
+    using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
     public class Program
     {
@@ -19,8 +23,15 @@
             builder.Services.AddDbContext<DataContext>(options =>
                 options.UseSqlServer(connectionString));
 
+            builder.Services.AddIdentity<IdentityUser, IdentityRole>()
+    .AddEntityFrameworkStores<DataContext>()  
+    .AddDefaultTokenProviders();
 
 
+            var jwtSettings = new JwtSettings();
+            builder.Configuration.GetSection(nameof(JwtSettings)).Bind(jwtSettings);
+            builder.Services.AddSingleton(jwtSettings);
+            builder.Services.AddScoped<IIdentityService, IdentityService>();
 
 
             // Add services to the container.
@@ -38,7 +49,7 @@
             }
 
             var swaggerOptions = new SwaggerOptions();
-           builder.Configuration.GetSection(nameof(swaggerOptions)).Bind(swaggerOptions);
+            builder.Configuration.GetSection(nameof(swaggerOptions)).Bind(swaggerOptions);
 
             app.UseSwagger(option => { option.RouteTemplate = swaggerOptions.JsonRoute; });
 
