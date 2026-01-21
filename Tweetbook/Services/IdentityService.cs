@@ -1,34 +1,35 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 using Tweetbook.Domain;
 using Tweetbook.Options;
-using System.IdentityModel.Tokens.Jwt;
-using Microsoft.IdentityModel.Tokens;
-using System.Security.Claims;
-
 
 namespace Tweetbook.Services
 {
-
-
     public class IdentityService : IIdentityService
     {
-        private readonly UserManager<IdentityUser> _UserManager;
-        private readonly JwtSettings _jwtsettings;
-        public IdentityService(UserManager<IdentityUser> userManager, JwtSettings jwtSettings)
+        private readonly UserManager<IdentityUser> _userManager;
+        private readonly JwtSettings _jwtSettings;
+
+        public IdentityService(
+            UserManager<IdentityUser> userManager,
+            JwtSettings jwtSettings)
         {
-            _UserManager = userManager;
-            _jwtsettings = new JwtSettings();
+            _userManager = userManager;
+            _jwtSettings = jwtSettings;
         }
+
         public async Task<AuthenticationResult> RegisterAsync(string email, string password)
         {
-            var existingUser = await _UserManager.FindByNameAsync(email);
+            var existingUser = await _userManager.FindByEmailAsync(email);
 
             if (existingUser != null)
             {
                 return new AuthenticationResult
                 {
-                    Errors = new[] { "user with this eamil already exists" }
+                    Errors = new[] { "User with this email already exists" }
                 };
             }
 
@@ -38,42 +39,73 @@ namespace Tweetbook.Services
                 UserName = email
             };
 
-            var createdUser = await _UserManager.CreateAsync(newUser, password);
+            var createdUser = await _userManager.CreateAsync(newUser, password);
+
             if (!createdUser.Succeeded)
             {
-
                 return new AuthenticationResult
                 {
                     Errors = createdUser.Errors.Select(x => x.Description)
-
                 };
-
             }
 
+            return GenerateAuthenticationResultForUser(newUser);
+        }
+
+        public async Task<AuthenticationResult> LoginAsync(string email, string password)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+
+            if (user == null)
+            {
+                return new AuthenticationResult
+                {
+                    Errors = new[] { "User does not exist" }
+                };
+            }
+
+            var userHasValidPassword = await _userManager.CheckPasswordAsync(user, password);
+
+            if (!userHasValidPassword)
+            {
+                return new AuthenticationResult
+                {
+                    Errors = new[] { "Invalid email or password" }
+                };
+            }
+
+            return GenerateAuthenticationResultForUser(user);
+        }
+
+
+        private AuthenticationResult GenerateAuthenticationResultForUser(IdentityUser user)
+        {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_jwtsettings.Secret);
+            var key = Encoding.ASCII.GetBytes(_jwtSettings.Secret);
+
+            var claims = new List<Claim>
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim("id", user.Id)
+            };
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[]
-                {
-                    new Claim(JwtRegisteredClaimNames.Sub, newUser.Id,email),
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                    new Claim(JwtRegisteredClaimNames.Email, newUser.Email),
-                    new Claim("id", newUser.Id)
-                }),
+                Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.UtcNow.AddHours(2),
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(key),
+                    SecurityAlgorithms.HmacSha256Signature)
             };
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
+
             return new AuthenticationResult
             {
-                Token = tokenHandler.WriteToken(token),
-
+                Token = tokenHandler.WriteToken(token)
             };
-
-
         }
     }
 }

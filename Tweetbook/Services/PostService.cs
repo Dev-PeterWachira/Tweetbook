@@ -27,7 +27,7 @@ namespace Tweetbook.Services
         }
 
 
-        public async Task<bool> CreatePost(Post post)
+        public async Task<bool> CreatePostAsync(Post post)
         {
            await _datcontext.Posts.AddAsync(post);
             var created = await _datcontext.SaveChangesAsync();
@@ -50,5 +50,17 @@ namespace Tweetbook.Services
             var deleted = await _datcontext.SaveChangesAsync();
             return deleted > 0;
         }
+
+        public async Task<bool> UserOwnsPostAsync(Guid postId, string userId)
+        {
+            var post = await _datcontext.Posts.AsNoTracking().SingleOrDefaultAsync(x => x.Id == postId);
+            if (post == null) 
+                return false;
+            
+            
+                return post.UserID == userId;
+            
+            return true;
+        }          
     }
 }

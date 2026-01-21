@@ -34,7 +34,26 @@ namespace Tweetbook.Controllers.V1
             });
         }
 
-        
+
+        [HttpPost(ApiRoutes.Identity.Login)]
+        public async Task<IActionResult> Login([FromBody] UserLoginRequest request)
+        {
+            var authResponse = await _identityService.LoginAsync(request.Email, request.Password);
+
+            if (!authResponse.success)
+            {
+                return BadRequest(new AuthFailedResponse
+                {
+                    Errors = authResponse.Errors
+                });
+
+            }
+
+            return Ok(new AuthSuccessResponse
+            {
+                Token = authResponse.Token
+            });
+        }
     }
 }
  

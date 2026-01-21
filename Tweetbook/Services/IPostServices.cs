@@ -9,8 +9,10 @@ namespace Tweetbook.Services
     {
         Task<List<Post>> GetPosts();
         Task<Post?> GetPostById(Guid postId);  
-        Task<bool> CreatePost(Post post);     
+        Task<bool> CreatePostAsync(Post post);     
         Task<bool> UpdatePost(Post postToUpdate);
         Task<bool> DeletePost(Guid postId);
+
+        Task<bool> UserOwnsPostAsync(Guid postId, string userId);
     }
 }

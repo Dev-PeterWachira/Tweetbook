@@ -6,10 +6,9 @@ namespace Tweetbook.Services
 {
     public interface IIdentityService
     {
-        Task<AuthenticationResult> RegisterAsync(string email, string password)
-        {
-            throw new NotImplementedException();
-        }
+        Task<AuthenticationResult> RegisterAsync(string email, string password);
+        
+        Task<AuthenticationResult> LoginAsync(string ermail, string password);
     }
 }
 
