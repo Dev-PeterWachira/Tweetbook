@@ -30,7 +30,8 @@ namespace Tweetbook.Controllers.V1
 
             return Ok(new AuthSuccessResponse
             {
-                Token = authResponse.Token
+                Token = authResponse.Token,
+                RefreshToken = authResponse.RefreshToken
             });
         }
 
@@ -52,6 +53,28 @@ namespace Tweetbook.Controllers.V1
             return Ok(new AuthSuccessResponse
             {
                 Token = authResponse.Token
+              
+            });
+        }
+
+        [HttpPost(ApiRoutes.Identity.Refresh)]
+        public async Task<IActionResult> Login([FromBody] RefreshTokenRequest request)
+        {
+            var authResponse = await _identityService.RefreshTokenAsync(request.Token, request.RefreshToken);
+
+            if (!authResponse.success)
+            {
+                return BadRequest(new AuthFailedResponse
+                {
+                    Errors = authResponse.Errors
+                });
+
+            }
+
+            return Ok(new AuthSuccessResponse
+            {
+                Token = authResponse.Token
+
             });
         }
     }
