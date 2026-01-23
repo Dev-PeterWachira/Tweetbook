@@ -38,12 +38,18 @@ namespace Tweetbook.Services
                     Errors = new[] { "User with this email already exists" }
                 };
             }
-        
+            var newUserId = Guid.NewGuid();
             var newUser = new IdentityUser
             {
+                Id = newUserId.ToString(),
                 Email = email,
                 UserName = email
             };
+
+            await _userManager.AddClaimsAsync(newUser, new [] 
+            {
+                new Claim("tags.view", "true")
+            });
 
             var createdUser = await _userManager.CreateAsync(newUser, password);
 
@@ -176,6 +182,9 @@ namespace Tweetbook.Services
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim("id", user.Id)
             };
+
+            var userClaims = await _userManager.GetClaimsAsync(user);
+            claims.AddRange(userClaims);
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {

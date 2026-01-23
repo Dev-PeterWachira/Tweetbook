@@ -17,6 +17,12 @@
             public const string Create = Base + "/posts";
         }
 
+        public static class  Tags
+        {
+            public const string GetAll = "api/v1/tags";
+            public const string Get = "api/v1/tags/{tagId}";
+        }
+
         public static class Identity
         {
             public const string Login = Base + "identity/login";

@@ -33,7 +33,10 @@ namespace Tweetbook.Installers
                     };
                 });
 
-            services.AddAuthorization();
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy("TagViewer", builder => builder.RequireClaim("tags.view", "true"));
+            });
         }
     }
 }
